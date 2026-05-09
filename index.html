@@ -7,6 +7,19 @@
     <!-- Font Awesome 6 & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "73da4cda-8d99-4a3e-8796-d9e7e9417a38",
+      safari_web_id: "web.onesignal.auto.521cdcf4-43b8-4659-a2e2-fd037f95e0d5",
+      notifyButton: {
+        enable: true,
+      },
+    });
+  });
+</script>
     <style>
         * {
             margin: 0;
