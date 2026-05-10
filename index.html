@@ -7,19 +7,9 @@
     <!-- Font Awesome 6 & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "73da4cda-8d99-4a3e-8796-d9e7e9417a38",
-      safari_web_id: "web.onesignal.auto.521cdcf4-43b8-4659-a2e2-fd037f95e0d5",
-      notifyButton: {
-        enable: true,
-      },
-    });
-  });
-</script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -209,12 +199,12 @@
             transform: scale(1.3);
         }
 
-        /* ===== RESOURCE GRID (directly after slider, no heading) ===== */
+        /* ===== RESOURCE GRID ===== */
         .resource-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 12px;
-            margin-top: 14px;  /* subtle space after slider */
+            margin-top: 14px;
             margin-bottom: 10px;
         }
         .resource-item {
@@ -388,38 +378,19 @@
         }
 
         @media (max-width: 500px) {
-            .slide {
-                min-height: 160px;
-            }
-            .resource-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-            .resource-item {
-                padding: 14px 6px;
-            }
-            .resource-icon {
-                font-size: 1.3rem;
-            }
-            .resource-label {
-                font-size: 0.7rem;
-            }
+            .slide { min-height: 160px; }
+            .resource-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .resource-item { padding: 14px 6px; }
+            .resource-icon { font-size: 1.3rem; }
+            .resource-label { font-size: 0.7rem; }
         }
         @media (min-width: 501px) and (max-width: 700px) {
-            .slide {
-                min-height: 200px;
-            }
-            .resource-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+            .slide { min-height: 200px; }
+            .resource-grid { grid-template-columns: repeat(3, 1fr); }
         }
         @media (min-width: 701px) {
-            .slide {
-                min-height: 240px;
-            }
-            .resource-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
+            .slide { min-height: 240px; }
+            .resource-grid { grid-template-columns: repeat(4, 1fr); }
         }
     </style>
 </head>
@@ -434,7 +405,7 @@
             </div>
             <div class="notify-icon" id="notificationBtn" title="Notifications">
                 <i class="fas fa-bell"></i>
-                <span class="notify-badge">2</span>
+                <span class="notify-badge" id="notifyBadge">0</span>
             </div>
         </div>
     </div>
@@ -443,10 +414,10 @@
     <div class="main-content">
         <div class="welcome-message">
             <i class="fas fa-hand-peace"></i>
-            <span>नमस्ते, <span class="greeting-name" id="greetingUser">Sumit Verma</span></span>
+            <span>नमस्ते, <span class="greeting-name" id="greetingUser">Student</span></span>
         </div>
 
-        <!-- IMAGE SLIDER (no text, just images) -->
+        <!-- IMAGE SLIDER -->
         <div class="slider-section">
             <div class="slider-container" id="sliderContainer">
                 <div class="slides-wrapper" id="slidesWrapper"></div>
@@ -454,7 +425,7 @@
             <div class="dots" id="dotsContainer"></div>
         </div>
 
-        <!-- RESOURCE CARDS (directly after slider, no heading) -->
+        <!-- RESOURCE CARDS -->
         <div class="resource-grid" id="resourceGrid"></div>
     </div>
 
@@ -475,12 +446,26 @@
     </div>
 
     <script>
+        // ==================== FIREBASE CONFIG ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeZl52HEWGz-vE72QZ5taznvpYTfq3QUk",
+            authDomain: "login-and-reg-5728d.firebaseapp.com",
+            databaseURL: "https://login-and-reg-5728d-default-rtdb.firebaseio.com",
+            projectId: "login-and-reg-5728d",
+            storageBucket: "login-and-reg-5728d.firebasestorage.app",
+            messagingSenderId: "435846403197",
+            appId: "1:435846403197:web:d6a05a55e40839d15dcd14"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // ==================== NAME MODAL ====================
         (function() {
             const storedName = localStorage.getItem('alphaStudentName');
             const greetingSpan = document.getElementById('greetingUser');
             if (storedName && storedName.trim() !== "") {
                 if (greetingSpan) greetingSpan.innerText = storedName;
+                afterNameReady(storedName);
                 return;
             }
             const overlay = document.createElement('div');
@@ -502,17 +487,59 @@
                 localStorage.setItem('alphaStudentName', name);
                 overlay.classList.add('hide');
                 setTimeout(() => overlay.remove(), 300);
+                afterNameReady(name);
             }
             submit.addEventListener('click', saveAndClose);
             input.addEventListener('keypress', e => { if (e.key === 'Enter') saveAndClose(); });
             setTimeout(() => input.focus(), 150);
         })();
 
+        function afterNameReady(studentName) {
+            // Request notification permission
+            if ("Notification" in window) {
+                Notification.requestPermission();
+            }
+
+            const studentKey = studentName.replace(/\s/g, '_');
+
+            // Listen for global notifications
+            const allRef = database.ref('notifications/all');
+            allRef.on('child_added', (snap) => {
+                const notif = snap.val();
+                if (notif && notif.title && notif.body) {
+                    showBrowserNotification(notif.title, notif.body);
+                }
+                updateBadgeCount();
+            });
+
+            // Listen for personal notifications
+            const personalRef = database.ref(`notifications/student_${studentKey}`);
+            personalRef.on('child_added', (snap) => {
+                const notif = snap.val();
+                if (notif && notif.title && notif.body) {
+                    showBrowserNotification(notif.title, notif.body);
+                }
+                updateBadgeCount();
+            });
+
+            function showBrowserNotification(title, body) {
+                if (Notification.permission === "granted") {
+                    new Notification(title, { body, icon: "/logo.png" });
+                }
+            }
+
+            function updateBadgeCount() {
+                // Optional: count unread? We'll just show a simple indicator
+                const badge = document.getElementById('notifyBadge');
+                if (badge) badge.innerText = "🔔";
+            }
+        }
+
         // ==================== IMAGE SLIDER ====================
         const slidesData = [
             { img: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqlqupKpBStr-OjLdXyvxu2YpLUtmPGY6mYUQh8icare5CLaK9t70ZV_OIpyEfLfn4HevCZGHe3EFxnTZIOjA8HQ3kNoxwzARrtaYjF_PqqOLBvqKzPHvV08EwJDwrrNaYsC3o8HwXcGvjGCJ2b3EcKLnXkZBiulQ5zsNUH1AJGkcTqr-l1RLkqQKFDAJx/s853/im%201%20.gif" },
             { img: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgwFfIrlUQv4QJH0iqy8rJyHRZZhpTYXbDhTycz8DWUHgiLStkFJIWRZuvkqadKCLp-5wYpbQ897LJQBpNnCqa-dxwpyMH8NpPmc32OQJaIrdEesvLTTcNvp2_WqI42YyRANPZfHIkXWerLMF78CHADDTfAC59SwAK3oR2e1Gi6R_qZBQRKivhuVjlBd-Y9/s853/Presentation2.gif" },
-              { img: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrxwFLsFFpm1iO1ZSTSpzHPTCehdCw3M-YvEWYUwl5g7BvAzaBzmDnV7qXuLkY8ZWnAG9u32MAE-vDCnkHEQTxwefL3qYldp5vDXcwbC6rxf3Xgppqf2zuAelSqZe1YQAUMvOCwY_wD4dFFZn0CZZxwShbl00PGSsaPS2itb-B6WMdDLa7WMrU5DLPozMn/s853/ia%202.gif" }
+            { img: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrxwFLsFFpm1iO1ZSTSpzHPTCehdCw3M-YvEWYUwl5g7BvAzaBzmDnV7qXuLkY8ZWnAG9u32MAE-vDCnkHEQTxwefL3qYldp5vDXcwbC6rxf3Xgppqf2zuAelSqZe1YQAUMvOCwY_wD4dFFZn0CZZxwShbl00PGSsaPS2itb-B6WMdDLa7WMrU5DLPozMn/s853/ia%202.gif" }
         ];
 
         let currentIndex = 0;
@@ -568,29 +595,22 @@
             const container = document.getElementById('sliderContainer');
             container.addEventListener('mouseenter', () => clearInterval(autoInterval));
             container.addEventListener('mouseleave', resetAutoPlay);
-
             let touchStartX = 0;
-            container.addEventListener('touchstart', e => {
-                touchStartX = e.changedTouches[0].screenX;
-                clearInterval(autoInterval);
-            }, { passive: true });
+            container.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; clearInterval(autoInterval); }, { passive: true });
             container.addEventListener('touchend', e => {
                 const diff = touchStartX - e.changedTouches[0].screenX;
-                if (Math.abs(diff) > 40) {
-                    diff > 0 ? nextSlide() : prevSlide();
-                }
+                if (Math.abs(diff) > 40) diff > 0 ? nextSlide() : prevSlide();
                 resetAutoPlay();
             });
         }
 
-        // ==================== RESOURCE GRID (links unchanged) ====================
+        // ==================== RESOURCE GRID ====================
         const resources = [
             { label: "Student Section", icon: "fas fa-user-lock", link: "./register.html", tag: "" },
             { label: "New Admission", icon: "fas fa-clipboard-list", link: "./addmision.html", tag: "2026" },
             { label: "Students ID Card", icon: "fas fa-id-card", link: "./login.html", tag: "" },
-
             { label: "Fee Payment", icon: "fas fa-qrcode", link: "./payment.html", tag: "Direct Payment" },
-            { label: "Paid Classes", icon: "fas fa-video", link: "./online-classes.html", tag: "On the Way" },
+            { label: "Online Classes", icon: "fas fa-video", link: "./online-classes.html", tag: "On the Way" },
             { label: "Books PDF", icon: "fas fa-book-open", link: "./books-pdf.html", tag: "NEW" },
             { label: "Class Notes", icon: "fas fa-pencil-alt", link: "./class-notes.html", tag: "PDF" },
         ];
@@ -613,7 +633,6 @@
             const msg = encodeURIComponent('Hello Triveni Pathsala! 👋 I need help.');
             const wsUrl = `https://wa.me/${wsNumber}?text=${msg}`;
             const linkMap = { 'Home': '/alpha-home', 'My Purchases': '/my-purchases' };
-
             items.forEach(item => {
                 const span = item.querySelector('span')?.innerText;
                 const isWs = item.getAttribute('data-link') === 'whatsapp';
@@ -628,9 +647,9 @@
             });
         }
 
-        // ==================== NOTIFICATION ====================
+        // ==================== NOTIFICATION BELL ====================
         document.getElementById('notificationBtn').addEventListener('click', () => {
-            alert("🔔 Notifications:\n\n• New batch starting soon!\n• Free weekly test uploaded.");
+            alert("🔔 You'll receive important updates here. Make sure notifications are allowed.");
         });
 
         // ==================== START ====================
