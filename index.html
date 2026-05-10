@@ -7,12 +7,12 @@
     <!-- Font Awesome 6 & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js">
-    </script>
+    <!-- Firebase SDKs (Compat + Modular for Messaging) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
     <style>
+        /* Your existing styles (kept exactly the same) */
         :root {
             --primary: #1e3c72;
             --accent: #f97316;
@@ -49,7 +49,6 @@
             line-height: 1.5;
         }
 
-        /* ===== HEADER ===== */
         .main-header {
             background: white;
             box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04);
@@ -194,7 +193,6 @@
             }
         }
 
-        /* ===== NOTIFICATION DROPDOWN ===== */
         .notif-dropdown {
             position: absolute;
             top: 52px;
@@ -305,7 +303,6 @@
             color: #cbd5e1;
         }
 
-        /* ===== TOAST CONTAINER ===== */
         .toast-container {
             position: fixed;
             top: 16px;
@@ -428,7 +425,6 @@
             }
         }
 
-        /* ===== MAIN CONTAINER ===== */
         .main-content {
             max-width: 900px;
             margin: 0 auto;
@@ -455,7 +451,6 @@
             color: var(--accent);
         }
 
-        /* ===== IMAGE SLIDER ===== */
         .slider-section {
             margin: 0 0 20px;
             border-radius: 18px;
@@ -502,7 +497,6 @@
             transform: scale(1.3);
         }
 
-        /* ===== RESOURCE GRID ===== */
         .resource-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -555,7 +549,6 @@
             font-weight: 600;
         }
 
-        /* ===== FOOTER ===== */
         .footer-nav {
             background: white;
             border-top: 1px solid var(--border);
@@ -614,7 +607,6 @@
             font-size: 0.7rem;
         }
 
-        /* ===== NAME MODAL ===== */
         .name-modal-overlay {
             position: fixed;
             top: 0;
@@ -684,7 +676,6 @@
             background: #e2620e;
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 500px) {
             .slide {
                 min-height: 160px;
@@ -740,7 +731,6 @@
 </head>
 <body>
 
-    <!-- HEADER -->
     <div class="main-header">
         <div class="header-container">
             <div class="header-left">
@@ -759,7 +749,6 @@
                 </button>
             </div>
         </div>
-        <!-- NOTIFICATION DROPDOWN -->
         <div class="notif-dropdown" id="notifDropdown">
             <div class="notif-dropdown-header">
                 <span><i class="fas fa-bell"></i> Notifications</span>
@@ -771,17 +760,14 @@
         </div>
     </div>
 
-    <!-- TOAST CONTAINER -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="welcome-message">
             <i class="fas fa-hand-peace"></i>
             <span>नमस्ते, <span class="greeting-name" id="greetingUser">Student</span></span>
         </div>
 
-        <!-- IMAGE SLIDER -->
         <div class="slider-section">
             <div class="slider-container" id="sliderContainer">
                 <div class="slides-wrapper" id="slidesWrapper"></div>
@@ -789,11 +775,9 @@
             <div class="dots" id="dotsContainer"></div>
         </div>
 
-        <!-- RESOURCE CARDS -->
         <div class="resource-grid" id="resourceGrid"></div>
     </div>
 
-    <!-- FOOTER -->
     <div class="footer-nav">
         <div class="footer-items">
             <div class="footer-item" data-link="/alpha-home">
@@ -820,17 +804,20 @@
             messagingSenderId: "435846403197",
             appId: "1:435846403197:web:d6a05a55e40839d15dcd14"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const database = firebase.database();
+        const messaging = firebase.messaging();
 
-        // ==================== TOAST NOTIFICATION SYSTEM ====================
+        // ==================== TOAST SYSTEM ====================
         const toastContainer = document.getElementById('toastContainer');
         let toastIdCounter = 0;
         const activeToasts = [];
 
         function playNotificationSound() {
             try {
-                const audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const notes = [800, 1000, 1200];
                 notes.forEach((freq, i) => {
                     const osc = audioCtx.createOscillator();
@@ -838,16 +825,13 @@
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
                     gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.1);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 +
-                        0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.15);
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
                     osc.start(audioCtx.currentTime + i * 0.1);
                     osc.stop(audioCtx.currentTime + i * 0.1 + 0.15);
                 });
-            } catch (e) {
-                // Silent fail - audio not supported
-            }
+            } catch (e) { /* silent fail */ }
         }
 
         function showToast(title, body, type = 'info') {
@@ -858,11 +842,10 @@
 
             let iconClass = 'fa-bell';
             let iconTypeClass = 'info';
-            if (type === 'success') { iconClass = 'fa-check-circle';
-                iconTypeClass = 'success'; } else if (type === 'warning') { iconClass = 'fa-exclamation-triangle';
-                iconTypeClass = 'warning'; } else if (type === 'error') { iconClass = 'fa-times-circle';
-                iconTypeClass = 'warning'; } else { iconClass = 'fa-bell';
-                iconTypeClass = 'info'; }
+            if (type === 'success') { iconClass = 'fa-check-circle'; iconTypeClass = 'success'; }
+            else if (type === 'warning') { iconClass = 'fa-exclamation-triangle'; iconTypeClass = 'warning'; }
+            else if (type === 'error') { iconClass = 'fa-times-circle'; iconTypeClass = 'warning'; }
+            else { iconClass = 'fa-bell'; iconTypeClass = 'info'; }
 
             toast.innerHTML = `
                 <div class="toast-icon ${iconTypeClass}"><i class="fas ${iconClass}"></i></div>
@@ -877,28 +860,18 @@
             toastContainer.appendChild(toast);
             activeToasts.push({ id, element: toast });
 
-            // Auto remove after 5 seconds
             const autoRemoveTimer = setTimeout(() => removeToast(id), 5000);
             toast._autoRemoveTimer = autoRemoveTimer;
 
-            // Click to dismiss
             toast.addEventListener('click', (e) => {
-                if (!e.target.closest('.toast-close')) {
-                    removeToast(id);
-                }
+                if (!e.target.closest('.toast-close')) removeToast(id);
             });
-
-            // Close button
             toast.querySelector('.toast-close').addEventListener('click', (e) => {
                 e.stopPropagation();
                 removeToast(id);
             });
 
-            // Limit to 5 toasts
-            while (activeToasts.length > 5) {
-                removeToast(activeToasts[0].id);
-            }
-
+            while (activeToasts.length > 5) removeToast(activeToasts[0].id);
             playNotificationSound();
             return id;
         }
@@ -909,13 +882,8 @@
             const { element } = activeToasts[idx];
             clearTimeout(element._autoRemoveTimer);
             element.classList.add('removing');
-            element.addEventListener('animationend', () => {
-                if (element.parentNode) element.remove();
-            });
-            // Fallback removal
-            setTimeout(() => {
-                if (element.parentNode) element.remove();
-            }, 400);
+            element.addEventListener('animationend', () => { if (element.parentNode) element.remove(); });
+            setTimeout(() => { if (element.parentNode) element.remove(); }, 400);
             activeToasts.splice(idx, 1);
         }
 
@@ -926,27 +894,49 @@
             return div.innerHTML;
         }
 
-        // ==================== BROWSER NOTIFICATION ====================
-        function showBrowserNotification(title, body) {
-            if (Notification.permission === "granted") {
-                try {
-                    const notif = new Notification(title, {
-                        body,
-                        icon: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqlqupKpBStr-OjLdXyvxu2YpLUtmPGY6mYUQh8icare5CLaK9t70ZV_OIpyEfLfn4HevCZGHe3EFxnTZIOjA8HQ3kNoxwzARrtaYjF_PqqOLBvqKzPHvV08EwJDwrrNaYsC3o8HwXcGvjGCJ2b3EcKLnXkZBiulQ5zsNUH1AJGkcTqr-l1RLkqQKFDAJx/s853/im%201%20.gif',
-                        tag: 'triveni-notif',
-                        requireInteraction: false,
-                        silent: false,
-                    });
-                    notif.onclick = () => {
-                        window.focus();
-                        notif.close();
-                    };
-                    setTimeout(() => notif.close(), 8000);
-                } catch (e) {
-                    console.warn('Browser notification failed:', e.message);
+        // ==================== FCM PUSH NOTIFICATIONS ====================
+        let currentFcmToken = null;
+
+        async function requestFcmPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    // Get FCM token
+                    const token = await messaging.getToken({ vapidKey: 'BPCcXk1V97LqX0bY9wR5xL7jK3nM2pQ8sT6uV4wX2yZ8aB9cD0eF1gH2iJ3kL4mN5oP6qR7sT8uV9wX0yZ1' });
+                    if (token) {
+                        currentFcmToken = token;
+                        console.log('✅ FCM Token:', token);
+                        // Store token in Firebase under the user's name
+                        const studentName = localStorage.getItem('alphaStudentName') || 'Guest';
+                        const sanitized = studentName.replace(/[.#$[\]]/g, '_');
+                        await database.ref(`fcm_tokens/${sanitized}`).set({
+                            token: token,
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP,
+                            userAgent: navigator.userAgent
+                        });
+                        showToast('🔔 Push Enabled', 'You will receive notifications even when app is closed.', 'success');
+                    } else {
+                        console.warn('No FCM token');
+                    }
+                } else {
+                    showToast('⚠️ Notifications blocked', 'Please enable in browser/app settings.', 'warning');
                 }
+                updateSubscribeButton();
+            } catch (err) {
+                console.error('FCM error:', err);
+                showToast('❌ Error', 'Could not enable push. Check your connection.', 'error');
             }
         }
+
+        // Listen for foreground messages from FCM
+        messaging.onMessage((payload) => {
+            console.log('Foreground FCM:', payload);
+            const title = payload.notification?.title || 'Triveni Pathsala';
+            const body = payload.notification?.body || 'New update available';
+            showToast(title, body, 'info');
+            // Also add to local history
+            addToNotifHistory({ title, body, timestamp: Date.now() });
+        });
 
         // ==================== SUBSCRIBE BUTTON ====================
         function updateSubscribeButton() {
@@ -957,13 +947,12 @@
                 btn.className = 'subscribe-btn subscribed';
                 icon.className = 'fas fa-bell';
                 span.textContent = 'Subscribed';
-                btn.title = 'Notifications are enabled. Click to test.';
+                btn.title = 'Push notifications are enabled';
             } else if (Notification.permission === 'denied') {
                 btn.className = 'subscribe-btn blocked';
                 icon.className = 'fas fa-bell-slash';
                 span.textContent = 'Blocked';
-                btn.title =
-                    'Notifications are blocked in browser settings. Please unblock to receive alerts.';
+                btn.title = 'Notifications blocked in settings';
             } else {
                 btn.className = 'subscribe-btn';
                 icon.className = 'fas fa-bell-slash';
@@ -974,42 +963,17 @@
 
         document.getElementById('subscribeBtn').addEventListener('click', async () => {
             if (Notification.permission === 'granted') {
-                // Already subscribed - send a test notification
-                showToast('✅ Already Subscribed',
-                    'You will receive important updates as notifications.', 'success');
-                showBrowserNotification('Triveni Pathsala',
-                    'You are subscribed! You will receive important alerts here.');
+                showToast('✅ Already Subscribed', 'You will receive push updates.', 'success');
                 return;
             }
             if (Notification.permission === 'denied') {
-                showToast('⚠️ Notifications Blocked',
-                    'Please unblock notifications in your browser settings for this site.', 'warning');
+                showToast('⚠️ Notifications Blocked', 'Please enable in browser/app settings.', 'warning');
                 return;
             }
-            // Request permission
-            try {
-                const result = await Notification.requestPermission();
-                updateSubscribeButton();
-                if (result === 'granted') {
-                    showToast('🔔 Subscribed Successfully!',
-                        'You will now receive important notifications from Triveni Pathsala.',
-                    'success');
-                    showBrowserNotification('Triveni Pathsala ✅',
-                        'Welcome! You are now subscribed to notifications.');
-                } else if (result === 'denied') {
-                    showToast('❌ Permission Denied',
-                        'You won\'t receive notifications. You can change this in browser settings.',
-                        'warning');
-                }
-            } catch (e) {
-                console.error('Notification request failed:', e);
-                showToast('⚠️ Error',
-                    'Could not request notification permission. Please try manually in browser settings.',
-                    'warning');
-            }
+            await requestFcmPermission();
         });
 
-        // ==================== NOTIFICATION DROPDOWN ====================
+        // ==================== NOTIFICATION DROPDOWN (same as before) ====================
         const notifDropdown = document.getElementById('notifDropdown');
         const notifDropdownBody = document.getElementById('notifDropdownBody');
         const notificationBtn = document.getElementById('notificationBtn');
@@ -1019,29 +983,21 @@
         const LAST_SEEN_KEY = 'triveni_last_seen_timestamp';
 
         function getNotifHistory() {
-            try {
-                return JSON.parse(localStorage.getItem(NOTIF_HISTORY_KEY) || '[]');
-            } catch (e) { return []; }
+            try { return JSON.parse(localStorage.getItem(NOTIF_HISTORY_KEY) || '[]'); }
+            catch (e) { return []; }
         }
-
         function saveNotifHistory(history) {
-            try {
-                localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
-            } catch (e) { /* storage full */ }
+            try { localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(history.slice(0, 50))); }
+            catch (e) { }
         }
-
         function getLastSeenTimestamp() {
-            try {
-                return parseInt(localStorage.getItem(LAST_SEEN_KEY) || '0');
-            } catch (e) { return 0; }
+            try { return parseInt(localStorage.getItem(LAST_SEEN_KEY) || '0'); }
+            catch (e) { return 0; }
         }
-
         function setLastSeenTimestamp(ts) {
-            try {
-                localStorage.setItem(LAST_SEEN_KEY, String(ts));
-            } catch (e) { /* storage full */ }
+            try { localStorage.setItem(LAST_SEEN_KEY, String(ts)); }
+            catch (e) { }
         }
-
         function addToNotifHistory(notif) {
             const history = getNotifHistory();
             history.unshift({
@@ -1055,7 +1011,6 @@
             updateBadge();
             renderNotifDropdown();
         }
-
         function markAllAsRead() {
             const history = getNotifHistory();
             history.forEach(n => n.read = true);
@@ -1064,14 +1019,12 @@
             updateBadge();
             renderNotifDropdown();
         }
-
         function clearAllNotifs() {
             saveNotifHistory([]);
             unreadCount = 0;
             updateBadge();
             renderNotifDropdown();
         }
-
         function updateBadge() {
             if (unreadCount > 0) {
                 notifyBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
@@ -1080,20 +1033,15 @@
                 notifyBadge.classList.remove('visible');
             }
         }
-
         function renderNotifDropdown() {
             const history = getNotifHistory();
             if (history.length === 0) {
-                notifDropdownBody.innerHTML =
-                    '<div class="notif-empty"><i class="fas fa-inbox"></i> No notifications yet</div>';
+                notifDropdownBody.innerHTML = '<div class="notif-empty"><i class="fas fa-inbox"></i> No notifications yet</div>';
                 return;
             }
             notifDropdownBody.innerHTML = history.slice(0, 20).map((n, i) => {
                 const timeStr = n.timestamp ? new Date(n.timestamp).toLocaleString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
                 }) : '';
                 const unreadClass = n.read ? '' : 'unread';
                 const dotOrNot = n.read ? '' : '<div class="notif-dot"></div>';
@@ -1121,30 +1069,24 @@
                 renderNotifDropdown();
             }
         });
-
         document.getElementById('clearAllNotifs').addEventListener('click', (e) => {
             e.stopPropagation();
             clearAllNotifs();
         });
-
-        // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (!notifDropdown.contains(e.target) && e.target !== notificationBtn && !notificationBtn
-                .contains(e.target)) {
+            if (!notifDropdown.contains(e.target) && e.target !== notificationBtn && !notificationBtn.contains(e.target)) {
                 notifDropdown.classList.remove('open');
             }
         });
-
-        // Initialize badge and dropdown on load
-        (function() {
+        (function initHistory() {
             const history = getNotifHistory();
             unreadCount = history.filter(n => !n.read).length;
             updateBadge();
             renderNotifDropdown();
         })();
 
-        // ==================== NAME MODAL ====================
-        (function() {
+        // ==================== NAME MODAL & FIREBASE LISTENERS ====================
+        (function setupNameAndListeners() {
             const storedName = localStorage.getItem('alphaStudentName');
             const greetingSpan = document.getElementById('greetingUser');
             if (storedName && storedName.trim() !== "") {
@@ -1180,49 +1122,33 @@
         })();
 
         function afterNameReady(studentName) {
-            // Update subscribe button state
             updateSubscribeButton();
 
-            // Also check permission on load
-            if (Notification.permission === 'default') {
-                // Show a gentle toast to encourage subscribing
-                setTimeout(() => {
-                    showToast('🔔 Stay Updated!',
-                        'Click the <b>Subscribe</b> button to receive important notifications.',
-                        'info');
-                }, 2000);
-            }
+            // Auto-request notification permission (gentle)
+            setTimeout(() => {
+                if (Notification.permission === 'default') {
+                    requestFcmPermission();
+                }
+            }, 2000);
 
             const studentKey = studentName.replace(/\s/g, '_');
             const lastSeenTs = getLastSeenTimestamp();
 
-            // Listen for global notifications (all students)
+            // Listen for global notifications (RTDB)
             const allRef = database.ref('notifications/all');
             allRef.on('child_added', (snap) => {
                 const notif = snap.val();
                 if (notif && notif.title && notif.body) {
                     const notifTs = notif.timestamp || 0;
-                    // Only process if this notification is newer than last seen
                     if (notifTs > lastSeenTs || lastSeenTs === 0) {
-                        // Show in-app toast
                         showToast(notif.title, notif.body, 'info');
-                        // Show browser notification
-                        showBrowserNotification(notif.title, notif.body);
-                        // Add to history
-                        addToNotifHistory({
-                            title: notif.title,
-                            body: notif.body,
-                            timestamp: notifTs,
-                        });
-                        // Update last seen
-                        if (notifTs > getLastSeenTimestamp()) {
-                            setLastSeenTimestamp(notifTs);
-                        }
+                        addToNotifHistory({ title: notif.title, body: notif.body, timestamp: notifTs });
+                        if (notifTs > getLastSeenTimestamp()) setLastSeenTimestamp(notifTs);
                     }
                 }
             });
 
-            // Listen for personal notifications (specific student)
+            // Personal notifications
             const personalRef = database.ref(`notifications/student_${studentKey}`);
             personalRef.on('child_added', (snap) => {
                 const notif = snap.val();
@@ -1230,27 +1156,18 @@
                     const notifTs = notif.timestamp || 0;
                     if (notifTs > lastSeenTs || lastSeenTs === 0) {
                         showToast('📩 ' + notif.title, notif.body, 'warning');
-                        showBrowserNotification(notif.title, notif.body);
-                        addToNotifHistory({
-                            title: '📩 ' + notif.title,
-                            body: notif.body,
-                            timestamp: notifTs,
-                        });
-                        if (notifTs > getLastSeenTimestamp()) {
-                            setLastSeenTimestamp(notifTs);
-                        }
+                        addToNotifHistory({ title: '📩 ' + notif.title, body: notif.body, timestamp: notifTs });
+                        if (notifTs > getLastSeenTimestamp()) setLastSeenTimestamp(notifTs);
                     }
                 }
             });
 
-            // On first load, get the latest timestamp to avoid old notifications
+            // If first time, set last seen timestamp
             if (lastSeenTs === 0) {
                 allRef.orderByChild('timestamp').limitToLast(1).once('value', (snap) => {
                     if (snap.exists()) {
                         const vals = Object.values(snap.val());
-                        if (vals.length > 0 && vals[0].timestamp) {
-                            setLastSeenTimestamp(vals[0].timestamp);
-                        }
+                        if (vals.length > 0 && vals[0].timestamp) setLastSeenTimestamp(vals[0].timestamp);
                     } else {
                         setLastSeenTimestamp(Date.now());
                     }
@@ -1260,13 +1177,19 @@
             console.log('✅ Notification listeners active for:', studentName);
         }
 
-        // ==================== IMAGE SLIDER ====================
+        // ==================== SERVICE WORKER REGISTRATION ====================
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+                .catch(err => console.warn('⚠️ Service Worker registration failed:', err.message));
+        }
+
+        // ==================== IMAGE SLIDER & RESOURCES ====================
         const slidesData = [
             { img: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqlqupKpBStr-OjLdXyvxu2YpLUtmPGY6mYUQh8icare5CLaK9t70ZV_OIpyEfLfn4HevCZGHe3EFxnTZIOjA8HQ3kNoxwzARrtaYjF_PqqOLBvqKzPHvV08EwJDwrrNaYsC3o8HwXcGvjGCJ2b3EcKLnXkZBiulQ5zsNUH1AJGkcTqr-l1RLkqQKFDAJx/s853/im%201%20.gif" },
             { img: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgwFfIrlUQv4QJH0iqy8rJyHRZZhpTYXbDhTycz8DWUHgiLStkFJIWRZuvkqadKCLp-5wYpbQ897LJQBpNnCqa-dxwpyMH8NpPmc32OQJaIrdEesvLTTcNvp2_WqI42YyRANPZfHIkXWerLMF78CHADDTfAC59SwAK3oR2e1Gi6R_qZBQRKivhuVjlBd-Y9/s853/Presentation2.gif" },
             { img: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrxwFLsFFpm1iO1ZSTSpzHPTCehdCw3M-YvEWYUwl5g7BvAzaBzmDnV7qXuLkY8ZWnAG9u32MAE-vDCnkHEQTxwefL3qYldp5vDXcwbC6rxf3Xgppqf2zuAelSqZe1YQAUMvOCwY_wD4dFFZn0CZZxwShbl00PGSsaPS2itb-B6WMdDLa7WMrU5DLPozMn/s853/ia%202.gif" }
         ];
-
         let currentIndex = 0;
         const totalSlides = slidesData.length;
         const slidesWrapper = document.getElementById('slidesWrapper');
@@ -1274,11 +1197,8 @@
         let autoInterval;
 
         function buildSlides() {
-            slidesWrapper.innerHTML = slidesData.map(slide =>
-                `<div class="slide" style="background-image: url('${slide.img}');"></div>`
-            ).join('');
+            slidesWrapper.innerHTML = slidesData.map(slide => `<div class="slide" style="background-image: url('${slide.img}');"></div>`).join('');
         }
-
         function createDots() {
             dotsContainer.innerHTML = '';
             for (let i = 0; i < totalSlides; i++) {
@@ -1289,13 +1209,9 @@
                 dotsContainer.appendChild(dot);
             }
         }
-
         function updateDots() {
-            document.querySelectorAll('.dot').forEach((dot, idx) => {
-                dot.classList.toggle('active', idx === currentIndex);
-            });
+            document.querySelectorAll('.dot').forEach((dot, idx) => { dot.classList.toggle('active', idx === currentIndex); });
         }
-
         function goToSlide(index) {
             if (index < 0) index = totalSlides - 1;
             if (index >= totalSlides) index = 0;
@@ -1304,16 +1220,11 @@
             updateDots();
             resetAutoPlay();
         }
-
         function nextSlide() { goToSlide(currentIndex + 1); }
-
-        function prevSlide() { goToSlide(currentIndex - 1); }
-
         function resetAutoPlay() {
             if (autoInterval) clearInterval(autoInterval);
             autoInterval = setInterval(() => nextSlide(), 5000);
         }
-
         function initSlider() {
             buildSlides();
             createDots();
@@ -1322,28 +1233,23 @@
             container.addEventListener('mouseenter', () => clearInterval(autoInterval));
             container.addEventListener('mouseleave', resetAutoPlay);
             let touchStartX = 0;
-            container.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX;
-                clearInterval(autoInterval); }, { passive: true });
+            container.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; clearInterval(autoInterval); }, { passive: true });
             container.addEventListener('touchend', e => {
                 const diff = touchStartX - e.changedTouches[0].screenX;
-                if (Math.abs(diff) > 40) diff > 0 ? nextSlide() : prevSlide();
+                if (Math.abs(diff) > 40) diff > 0 ? nextSlide() : goToSlide(currentIndex - 1);
                 resetAutoPlay();
             });
         }
 
-        // ==================== RESOURCE GRID ====================
         const resources = [
             { label: "Student Section", icon: "fas fa-user-lock", link: "./register.html", tag: "" },
-            { label: "New Admission", icon: "fas fa-clipboard-list", link: "./addmision.html",
-            tag: "2026" },
+            { label: "New Admission", icon: "fas fa-clipboard-list", link: "./addmision.html", tag: "2026" },
             { label: "Students ID Card", icon: "fas fa-id-card", link: "./login.html", tag: "" },
             { label: "Fee Payment", icon: "fas fa-qrcode", link: "./payment.html", tag: "Direct Payment" },
-            { label: "Online Classes", icon: "fas fa-video", link: "./online-classes.html",
-            tag: "On the Way" },
+            { label: "Online Classes", icon: "fas fa-video", link: "./online-classes.html", tag: "On the Way" },
             { label: "Books PDF", icon: "fas fa-book-open", link: "./books-pdf.html", tag: "NEW" },
             { label: "Class Notes", icon: "fas fa-pencil-alt", link: "./class-notes.html", tag: "PDF" },
         ];
-
         function buildResourceGrid() {
             const grid = document.getElementById('resourceGrid');
             grid.innerHTML = resources.map(item => `
@@ -1355,43 +1261,27 @@
             `).join('');
         }
 
-        // ==================== FOOTER & WHATSAPP ====================
         function setupFooter() {
             const items = document.querySelectorAll('.footer-item');
             const wsNumber = '916202320527';
             const msg = encodeURIComponent('Hello Triveni Pathsala! 👋 I need help.');
             const wsUrl = `https://wa.me/${wsNumber}?text=${msg}`;
-            const linkMap = { 'Home': '/alpha-home', 'My Purchases': '/my-purchases' };
             items.forEach(item => {
-                const span = item.querySelector('span')?.innerText;
                 const isWs = item.getAttribute('data-link') === 'whatsapp';
                 item.addEventListener('click', () => {
-                    if (isWs) {
-                        window.open(wsUrl, '_blank', 'noopener');
-                        return;
-                    }
-                    const dest = linkMap[span] || item.getAttribute('data-link') || '#';
+                    if (isWs) { window.open(wsUrl, '_blank', 'noopener'); return; }
+                    const dest = item.getAttribute('data-link') || '#';
                     window.location.href = dest;
                 });
             });
         }
 
-        // ==================== SERVICE WORKER REGISTRATION ====================
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('✅ Service Worker registered:', reg.scope))
-                .catch(err => console.warn('⚠️ Service Worker registration failed:', err.message));
-        }
-
-        // ==================== START ====================
         window.addEventListener('DOMContentLoaded', () => {
             initSlider();
             buildResourceGrid();
             setupFooter();
             updateSubscribeButton();
         });
-
-        // Periodic check for notification permission changes
         setInterval(updateSubscribeButton, 5000);
     </script>
 </body>
