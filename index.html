@@ -8,15 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js">
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
             --primary: #1e3c72;
             --accent: #f97316;
@@ -30,6 +26,16 @@
             --shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.08);
             --radius-sm: 14px;
             --transition: 0.2s ease;
+            --toast-success: #10b981;
+            --toast-info: #3b82f6;
+            --toast-warning: #f59e0b;
+            --toast-error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
@@ -46,7 +52,7 @@
         /* ===== HEADER ===== */
         .main-header {
             background: white;
-            box-shadow: 0 1px 12px rgba(0,0,0,0.04);
+            box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -60,7 +66,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
+            gap: 12px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .logo-area {
             display: flex;
@@ -86,10 +97,50 @@
         }
         .site-name {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--primary);
             letter-spacing: -0.3px;
             white-space: nowrap;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subscribe-btn {
+            background: #fef3c7;
+            border: 1.5px solid #f59e0b;
+            color: #92400e;
+            font-weight: 600;
+            font-size: 0.7rem;
+            padding: 7px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.25s;
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+        }
+        .subscribe-btn:hover {
+            background: #fde68a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+        .subscribe-btn.subscribed {
+            background: #dcfce7;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        .subscribe-btn.subscribed i {
+            color: #10b981;
+        }
+        .subscribe-btn.blocked {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            cursor: help;
         }
         .notify-icon {
             background: #f1f5f9;
@@ -104,6 +155,8 @@
             position: relative;
             font-size: 1.2rem;
             transition: background 0.2s;
+            border: none;
+            font-family: inherit;
         }
         .notify-icon:hover {
             background: #e2e8f0;
@@ -121,6 +174,258 @@
             border: 2px solid white;
             min-width: 20px;
             text-align: center;
+            display: none;
+        }
+        .notify-badge.visible {
+            display: block;
+            animation: badgePop 0.3s ease;
+        }
+        @keyframes badgePop {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            70% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ===== NOTIFICATION DROPDOWN ===== */
+        .notif-dropdown {
+            position: absolute;
+            top: 52px;
+            right: 10px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+            width: 340px;
+            max-width: 92vw;
+            max-height: 420px;
+            overflow-y: auto;
+            z-index: 200;
+            border: 1px solid var(--border);
+            display: none;
+            animation: dropdownIn 0.25s cubic-bezier(0.22, 0.97, 0.36, 1.1);
+        }
+        .notif-dropdown.open {
+            display: block;
+        }
+        @keyframes dropdownIn {
+            from {
+                opacity: 0;
+                transform: translateY(-16px) scale(0.94);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .notif-dropdown-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 2;
+            border-radius: 18px 18px 0 0;
+        }
+        .notif-dropdown-header button {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .notif-dropdown-header button:hover {
+            text-decoration: underline;
+        }
+        .notif-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .notif-item:hover {
+            background: #f8fafd;
+        }
+        .notif-item.unread {
+            background: #fffbeb;
+            border-left: 3px solid #f59e0b;
+        }
+        .notif-item .notif-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f59e0b;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+        .notif-item .notif-content {
+            flex: 1;
+        }
+        .notif-item .notif-title {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+        .notif-item .notif-body {
+            font-size: 0.7rem;
+            color: var(--text-soft);
+            margin-top: 2px;
+        }
+        .notif-item .notif-time {
+            font-size: 0.6rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .notif-empty {
+            text-align: center;
+            padding: 30px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+        .notif-empty i {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+        }
+
+        /* ===== TOAST CONTAINER ===== */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            max-width: 380px;
+            width: calc(100% - 32px);
+        }
+        .toast {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            pointer-events: auto;
+            animation: toastSlideIn 0.4s cubic-bezier(0.22, 0.97, 0.36, 1.1);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .toast.removing {
+            animation: toastSlideOut 0.35s ease forwards;
+        }
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(120%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        @keyframes toastSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(120%) scale(0.85);
+            }
+        }
+        .toast-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .toast-icon.info {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+        .toast-icon.success {
+            background: #ecfdf5;
+            color: #10b981;
+        }
+        .toast-icon.warning {
+            background: #fffbeb;
+            color: #f59e0b;
+        }
+        .toast-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .toast-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+        .toast-body {
+            font-size: 0.75rem;
+            color: var(--text-soft);
+            line-height: 1.3;
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 4px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .toast-close:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 0 0 0 16px;
+            animation: toastProgress 5s linear forwards;
+        }
+        @keyframes toastProgress {
+            from {
+                width: 100%;
+            }
+            to {
+                width: 0%;
+            }
         }
 
         /* ===== MAIN CONTAINER ===== */
@@ -131,8 +436,6 @@
             width: 100%;
             flex: 1;
         }
-
-        /* Welcome line */
         .welcome-message {
             display: flex;
             align-items: center;
@@ -157,7 +460,7 @@
             margin: 0 0 20px;
             border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
             background: #fff;
         }
         .slider-container {
@@ -219,13 +522,13 @@
             align-items: center;
             text-align: center;
             transition: all 0.25s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
         .resource-item:hover {
             border-color: #f97316;
             background: #fffaf5;
             transform: translateY(-4px);
-            box-shadow: 0 12px 28px rgba(0,0,0,0.06);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
         }
         .resource-icon {
             font-size: 1.7rem;
@@ -314,8 +617,11 @@
         /* ===== NAME MODAL ===== */
         .name-modal-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(6px);
             z-index: 1000;
             display: flex;
@@ -332,11 +638,11 @@
         .name-modal {
             background: white;
             border-radius: 24px;
-            max-width: 380px;
+            max-width: 400px;
             width: 90%;
             padding: 28px 22px;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
         .name-modal h3 {
             font-weight: 700;
@@ -372,25 +678,63 @@
             margin-top: 16px;
             cursor: pointer;
             transition: background 0.2s;
+            font-family: inherit;
         }
         .name-modal button:hover {
             background: #e2620e;
         }
 
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 500px) {
-            .slide { min-height: 160px; }
-            .resource-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-            .resource-item { padding: 14px 6px; }
-            .resource-icon { font-size: 1.3rem; }
-            .resource-label { font-size: 0.7rem; }
+            .slide {
+                min-height: 160px;
+            }
+            .resource-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .resource-item {
+                padding: 14px 6px;
+            }
+            .resource-icon {
+                font-size: 1.3rem;
+            }
+            .resource-label {
+                font-size: 0.7rem;
+            }
+            .site-name {
+                font-size: 0.85rem;
+            }
+            .subscribe-btn {
+                font-size: 0.6rem;
+                padding: 6px 10px;
+            }
+            .notif-dropdown {
+                width: 280px;
+                right: 4px;
+            }
+            .toast-container {
+                right: 6px;
+                left: 6px;
+                max-width: none;
+                width: auto;
+            }
         }
         @media (min-width: 501px) and (max-width: 700px) {
-            .slide { min-height: 200px; }
-            .resource-grid { grid-template-columns: repeat(3, 1fr); }
+            .slide {
+                min-height: 200px;
+            }
+            .resource-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
         @media (min-width: 701px) {
-            .slide { min-height: 240px; }
-            .resource-grid { grid-template-columns: repeat(4, 1fr); }
+            .slide {
+                min-height: 240px;
+            }
+            .resource-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
     </style>
 </head>
@@ -399,16 +743,36 @@
     <!-- HEADER -->
     <div class="main-header">
         <div class="header-container">
-            <div class="logo-area" onclick="window.location.href='/'" title="Triveni Pathsala Home">
-                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
-                <span class="site-name">Triveni Pathsala</span>
+            <div class="header-left">
+                <div class="logo-area" onclick="window.location.href='/'" title="Triveni Pathsala Home">
+                    <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <span class="site-name">Triveni Pathsala</span>
+                </div>
             </div>
-            <div class="notify-icon" id="notificationBtn" title="Notifications">
-                <i class="fas fa-bell"></i>
-                <span class="notify-badge" id="notifyBadge">0</span>
+            <div class="header-actions">
+                <button class="subscribe-btn" id="subscribeBtn" title="Enable push notifications">
+                    <i class="fas fa-bell-slash"></i> <span>Subscribe</span>
+                </button>
+                <button class="notify-icon" id="notificationBtn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notify-badge" id="notifyBadge">0</span>
+                </button>
+            </div>
+        </div>
+        <!-- NOTIFICATION DROPDOWN -->
+        <div class="notif-dropdown" id="notifDropdown">
+            <div class="notif-dropdown-header">
+                <span><i class="fas fa-bell"></i> Notifications</span>
+                <button id="clearAllNotifs">Clear All</button>
+            </div>
+            <div id="notifDropdownBody">
+                <div class="notif-empty"><i class="fas fa-inbox"></i> No notifications yet</div>
             </div>
         </div>
     </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
@@ -459,6 +823,326 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // ==================== TOAST NOTIFICATION SYSTEM ====================
+        const toastContainer = document.getElementById('toastContainer');
+        let toastIdCounter = 0;
+        const activeToasts = [];
+
+        function playNotificationSound() {
+            try {
+                const audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                const notes = [800, 1000, 1200];
+                notes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 +
+                        0.15);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + i * 0.1);
+                    osc.stop(audioCtx.currentTime + i * 0.1 + 0.15);
+                });
+            } catch (e) {
+                // Silent fail - audio not supported
+            }
+        }
+
+        function showToast(title, body, type = 'info') {
+            const id = ++toastIdCounter;
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.setAttribute('data-toast-id', id);
+
+            let iconClass = 'fa-bell';
+            let iconTypeClass = 'info';
+            if (type === 'success') { iconClass = 'fa-check-circle';
+                iconTypeClass = 'success'; } else if (type === 'warning') { iconClass = 'fa-exclamation-triangle';
+                iconTypeClass = 'warning'; } else if (type === 'error') { iconClass = 'fa-times-circle';
+                iconTypeClass = 'warning'; } else { iconClass = 'fa-bell';
+                iconTypeClass = 'info'; }
+
+            toast.innerHTML = `
+                <div class="toast-icon ${iconTypeClass}"><i class="fas ${iconClass}"></i></div>
+                <div class="toast-content">
+                    <div class="toast-title">${escapeHtml(title)}</div>
+                    <div class="toast-body">${escapeHtml(body)}</div>
+                </div>
+                <button class="toast-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <div class="toast-progress"></div>
+            `;
+
+            toastContainer.appendChild(toast);
+            activeToasts.push({ id, element: toast });
+
+            // Auto remove after 5 seconds
+            const autoRemoveTimer = setTimeout(() => removeToast(id), 5000);
+            toast._autoRemoveTimer = autoRemoveTimer;
+
+            // Click to dismiss
+            toast.addEventListener('click', (e) => {
+                if (!e.target.closest('.toast-close')) {
+                    removeToast(id);
+                }
+            });
+
+            // Close button
+            toast.querySelector('.toast-close').addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeToast(id);
+            });
+
+            // Limit to 5 toasts
+            while (activeToasts.length > 5) {
+                removeToast(activeToasts[0].id);
+            }
+
+            playNotificationSound();
+            return id;
+        }
+
+        function removeToast(id) {
+            const idx = activeToasts.findIndex(t => t.id === id);
+            if (idx === -1) return;
+            const { element } = activeToasts[idx];
+            clearTimeout(element._autoRemoveTimer);
+            element.classList.add('removing');
+            element.addEventListener('animationend', () => {
+                if (element.parentNode) element.remove();
+            });
+            // Fallback removal
+            setTimeout(() => {
+                if (element.parentNode) element.remove();
+            }, 400);
+            activeToasts.splice(idx, 1);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ==================== BROWSER NOTIFICATION ====================
+        function showBrowserNotification(title, body) {
+            if (Notification.permission === "granted") {
+                try {
+                    const notif = new Notification(title, {
+                        body,
+                        icon: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqlqupKpBStr-OjLdXyvxu2YpLUtmPGY6mYUQh8icare5CLaK9t70ZV_OIpyEfLfn4HevCZGHe3EFxnTZIOjA8HQ3kNoxwzARrtaYjF_PqqOLBvqKzPHvV08EwJDwrrNaYsC3o8HwXcGvjGCJ2b3EcKLnXkZBiulQ5zsNUH1AJGkcTqr-l1RLkqQKFDAJx/s853/im%201%20.gif',
+                        tag: 'triveni-notif',
+                        requireInteraction: false,
+                        silent: false,
+                    });
+                    notif.onclick = () => {
+                        window.focus();
+                        notif.close();
+                    };
+                    setTimeout(() => notif.close(), 8000);
+                } catch (e) {
+                    console.warn('Browser notification failed:', e.message);
+                }
+            }
+        }
+
+        // ==================== SUBSCRIBE BUTTON ====================
+        function updateSubscribeButton() {
+            const btn = document.getElementById('subscribeBtn');
+            const icon = btn.querySelector('i');
+            const span = btn.querySelector('span');
+            if (Notification.permission === 'granted') {
+                btn.className = 'subscribe-btn subscribed';
+                icon.className = 'fas fa-bell';
+                span.textContent = 'Subscribed';
+                btn.title = 'Notifications are enabled. Click to test.';
+            } else if (Notification.permission === 'denied') {
+                btn.className = 'subscribe-btn blocked';
+                icon.className = 'fas fa-bell-slash';
+                span.textContent = 'Blocked';
+                btn.title =
+                    'Notifications are blocked in browser settings. Please unblock to receive alerts.';
+            } else {
+                btn.className = 'subscribe-btn';
+                icon.className = 'fas fa-bell-slash';
+                span.textContent = 'Subscribe';
+                btn.title = 'Click to enable push notifications';
+            }
+        }
+
+        document.getElementById('subscribeBtn').addEventListener('click', async () => {
+            if (Notification.permission === 'granted') {
+                // Already subscribed - send a test notification
+                showToast('✅ Already Subscribed',
+                    'You will receive important updates as notifications.', 'success');
+                showBrowserNotification('Triveni Pathsala',
+                    'You are subscribed! You will receive important alerts here.');
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                showToast('⚠️ Notifications Blocked',
+                    'Please unblock notifications in your browser settings for this site.', 'warning');
+                return;
+            }
+            // Request permission
+            try {
+                const result = await Notification.requestPermission();
+                updateSubscribeButton();
+                if (result === 'granted') {
+                    showToast('🔔 Subscribed Successfully!',
+                        'You will now receive important notifications from Triveni Pathsala.',
+                    'success');
+                    showBrowserNotification('Triveni Pathsala ✅',
+                        'Welcome! You are now subscribed to notifications.');
+                } else if (result === 'denied') {
+                    showToast('❌ Permission Denied',
+                        'You won\'t receive notifications. You can change this in browser settings.',
+                        'warning');
+                }
+            } catch (e) {
+                console.error('Notification request failed:', e);
+                showToast('⚠️ Error',
+                    'Could not request notification permission. Please try manually in browser settings.',
+                    'warning');
+            }
+        });
+
+        // ==================== NOTIFICATION DROPDOWN ====================
+        const notifDropdown = document.getElementById('notifDropdown');
+        const notifDropdownBody = document.getElementById('notifDropdownBody');
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notifyBadge = document.getElementById('notifyBadge');
+        let unreadCount = 0;
+        const NOTIF_HISTORY_KEY = 'triveni_notif_history';
+        const LAST_SEEN_KEY = 'triveni_last_seen_timestamp';
+
+        function getNotifHistory() {
+            try {
+                return JSON.parse(localStorage.getItem(NOTIF_HISTORY_KEY) || '[]');
+            } catch (e) { return []; }
+        }
+
+        function saveNotifHistory(history) {
+            try {
+                localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
+            } catch (e) { /* storage full */ }
+        }
+
+        function getLastSeenTimestamp() {
+            try {
+                return parseInt(localStorage.getItem(LAST_SEEN_KEY) || '0');
+            } catch (e) { return 0; }
+        }
+
+        function setLastSeenTimestamp(ts) {
+            try {
+                localStorage.setItem(LAST_SEEN_KEY, String(ts));
+            } catch (e) { /* storage full */ }
+        }
+
+        function addToNotifHistory(notif) {
+            const history = getNotifHistory();
+            history.unshift({
+                title: notif.title,
+                body: notif.body,
+                timestamp: notif.timestamp || Date.now(),
+                read: false,
+            });
+            saveNotifHistory(history);
+            unreadCount++;
+            updateBadge();
+            renderNotifDropdown();
+        }
+
+        function markAllAsRead() {
+            const history = getNotifHistory();
+            history.forEach(n => n.read = true);
+            saveNotifHistory(history);
+            unreadCount = 0;
+            updateBadge();
+            renderNotifDropdown();
+        }
+
+        function clearAllNotifs() {
+            saveNotifHistory([]);
+            unreadCount = 0;
+            updateBadge();
+            renderNotifDropdown();
+        }
+
+        function updateBadge() {
+            if (unreadCount > 0) {
+                notifyBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                notifyBadge.classList.add('visible');
+            } else {
+                notifyBadge.classList.remove('visible');
+            }
+        }
+
+        function renderNotifDropdown() {
+            const history = getNotifHistory();
+            if (history.length === 0) {
+                notifDropdownBody.innerHTML =
+                    '<div class="notif-empty"><i class="fas fa-inbox"></i> No notifications yet</div>';
+                return;
+            }
+            notifDropdownBody.innerHTML = history.slice(0, 20).map((n, i) => {
+                const timeStr = n.timestamp ? new Date(n.timestamp).toLocaleString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : '';
+                const unreadClass = n.read ? '' : 'unread';
+                const dotOrNot = n.read ? '' : '<div class="notif-dot"></div>';
+                return `
+                    <div class="notif-item ${unreadClass}" data-idx="${i}">
+                        ${dotOrNot}
+                        <div class="notif-content">
+                            <div class="notif-title">${escapeHtml(n.title)}</div>
+                            <div class="notif-body">${escapeHtml(n.body)}</div>
+                            <div class="notif-time">${timeStr}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = notifDropdown.classList.contains('open');
+            if (isOpen) {
+                notifDropdown.classList.remove('open');
+            } else {
+                notifDropdown.classList.add('open');
+                markAllAsRead();
+                renderNotifDropdown();
+            }
+        });
+
+        document.getElementById('clearAllNotifs').addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearAllNotifs();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notifDropdown.contains(e.target) && e.target !== notificationBtn && !notificationBtn
+                .contains(e.target)) {
+                notifDropdown.classList.remove('open');
+            }
+        });
+
+        // Initialize badge and dropdown on load
+        (function() {
+            const history = getNotifHistory();
+            unreadCount = history.filter(n => !n.read).length;
+            updateBadge();
+            renderNotifDropdown();
+        })();
+
         // ==================== NAME MODAL ====================
         (function() {
             const storedName = localStorage.getItem('alphaStudentName');
@@ -481,6 +1165,7 @@
             document.body.appendChild(overlay);
             const input = document.getElementById('studentNameInput');
             const submit = document.getElementById('submitNameBtn');
+
             function saveAndClose() {
                 let name = input.value.trim() || "Student";
                 if (greetingSpan) greetingSpan.innerText = name;
@@ -495,44 +1180,84 @@
         })();
 
         function afterNameReady(studentName) {
-            // Request notification permission
-            if ("Notification" in window) {
-                Notification.requestPermission();
+            // Update subscribe button state
+            updateSubscribeButton();
+
+            // Also check permission on load
+            if (Notification.permission === 'default') {
+                // Show a gentle toast to encourage subscribing
+                setTimeout(() => {
+                    showToast('🔔 Stay Updated!',
+                        'Click the <b>Subscribe</b> button to receive important notifications.',
+                        'info');
+                }, 2000);
             }
 
             const studentKey = studentName.replace(/\s/g, '_');
+            const lastSeenTs = getLastSeenTimestamp();
 
-            // Listen for global notifications
+            // Listen for global notifications (all students)
             const allRef = database.ref('notifications/all');
             allRef.on('child_added', (snap) => {
                 const notif = snap.val();
                 if (notif && notif.title && notif.body) {
-                    showBrowserNotification(notif.title, notif.body);
+                    const notifTs = notif.timestamp || 0;
+                    // Only process if this notification is newer than last seen
+                    if (notifTs > lastSeenTs || lastSeenTs === 0) {
+                        // Show in-app toast
+                        showToast(notif.title, notif.body, 'info');
+                        // Show browser notification
+                        showBrowserNotification(notif.title, notif.body);
+                        // Add to history
+                        addToNotifHistory({
+                            title: notif.title,
+                            body: notif.body,
+                            timestamp: notifTs,
+                        });
+                        // Update last seen
+                        if (notifTs > getLastSeenTimestamp()) {
+                            setLastSeenTimestamp(notifTs);
+                        }
+                    }
                 }
-                updateBadgeCount();
             });
 
-            // Listen for personal notifications
+            // Listen for personal notifications (specific student)
             const personalRef = database.ref(`notifications/student_${studentKey}`);
             personalRef.on('child_added', (snap) => {
                 const notif = snap.val();
                 if (notif && notif.title && notif.body) {
-                    showBrowserNotification(notif.title, notif.body);
+                    const notifTs = notif.timestamp || 0;
+                    if (notifTs > lastSeenTs || lastSeenTs === 0) {
+                        showToast('📩 ' + notif.title, notif.body, 'warning');
+                        showBrowserNotification(notif.title, notif.body);
+                        addToNotifHistory({
+                            title: '📩 ' + notif.title,
+                            body: notif.body,
+                            timestamp: notifTs,
+                        });
+                        if (notifTs > getLastSeenTimestamp()) {
+                            setLastSeenTimestamp(notifTs);
+                        }
+                    }
                 }
-                updateBadgeCount();
             });
 
-            function showBrowserNotification(title, body) {
-                if (Notification.permission === "granted") {
-                    new Notification(title, { body, icon: "/logo.png" });
-                }
+            // On first load, get the latest timestamp to avoid old notifications
+            if (lastSeenTs === 0) {
+                allRef.orderByChild('timestamp').limitToLast(1).once('value', (snap) => {
+                    if (snap.exists()) {
+                        const vals = Object.values(snap.val());
+                        if (vals.length > 0 && vals[0].timestamp) {
+                            setLastSeenTimestamp(vals[0].timestamp);
+                        }
+                    } else {
+                        setLastSeenTimestamp(Date.now());
+                    }
+                });
             }
 
-            function updateBadgeCount() {
-                // Optional: count unread? We'll just show a simple indicator
-                const badge = document.getElementById('notifyBadge');
-                if (badge) badge.innerText = "🔔";
-            }
+            console.log('✅ Notification listeners active for:', studentName);
         }
 
         // ==================== IMAGE SLIDER ====================
@@ -581,6 +1306,7 @@
         }
 
         function nextSlide() { goToSlide(currentIndex + 1); }
+
         function prevSlide() { goToSlide(currentIndex - 1); }
 
         function resetAutoPlay() {
@@ -596,7 +1322,8 @@
             container.addEventListener('mouseenter', () => clearInterval(autoInterval));
             container.addEventListener('mouseleave', resetAutoPlay);
             let touchStartX = 0;
-            container.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; clearInterval(autoInterval); }, { passive: true });
+            container.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX;
+                clearInterval(autoInterval); }, { passive: true });
             container.addEventListener('touchend', e => {
                 const diff = touchStartX - e.changedTouches[0].screenX;
                 if (Math.abs(diff) > 40) diff > 0 ? nextSlide() : prevSlide();
@@ -607,10 +1334,12 @@
         // ==================== RESOURCE GRID ====================
         const resources = [
             { label: "Student Section", icon: "fas fa-user-lock", link: "./register.html", tag: "" },
-            { label: "New Admission", icon: "fas fa-clipboard-list", link: "./addmision.html", tag: "2026" },
+            { label: "New Admission", icon: "fas fa-clipboard-list", link: "./addmision.html",
+            tag: "2026" },
             { label: "Students ID Card", icon: "fas fa-id-card", link: "./login.html", tag: "" },
             { label: "Fee Payment", icon: "fas fa-qrcode", link: "./payment.html", tag: "Direct Payment" },
-            { label: "Online Classes", icon: "fas fa-video", link: "./online-classes.html", tag: "On the Way" },
+            { label: "Online Classes", icon: "fas fa-video", link: "./online-classes.html",
+            tag: "On the Way" },
             { label: "Books PDF", icon: "fas fa-book-open", link: "./books-pdf.html", tag: "NEW" },
             { label: "Class Notes", icon: "fas fa-pencil-alt", link: "./class-notes.html", tag: "PDF" },
         ];
@@ -647,17 +1376,23 @@
             });
         }
 
-        // ==================== NOTIFICATION BELL ====================
-        document.getElementById('notificationBtn').addEventListener('click', () => {
-            alert("🔔 You'll receive important updates here. Make sure notifications are allowed.");
-        });
+        // ==================== SERVICE WORKER REGISTRATION ====================
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+                .catch(err => console.warn('⚠️ Service Worker registration failed:', err.message));
+        }
 
         // ==================== START ====================
         window.addEventListener('DOMContentLoaded', () => {
             initSlider();
             buildResourceGrid();
             setupFooter();
+            updateSubscribeButton();
         });
+
+        // Periodic check for notification permission changes
+        setInterval(updateSubscribeButton, 5000);
     </script>
 </body>
 </html>
